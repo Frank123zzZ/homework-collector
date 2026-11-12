@@ -60,8 +60,31 @@
     return out;
   }
 
+  // 作业页里每道题是一张卡片：标题（做完的旁边有绿色 "Solved!"）+ 题目 + "Solve It!" 按钮
+  const solveItButtons = () =>
+    [...document.querySelectorAll('button, a, [role="button"], input[type="button"]')].filter((b) =>
+      /^solve it!?$/i.test(HW.text(b) || b.value || '')
+    );
+
   // 返回 { solved, total }；total 为 0 表示数不出题目总数，这时作业继续算没做完（宁可多列）
   function countSolved() {
+    const buttons = solveItButtons();
+    if (buttons.length) {
+      let solved = 0;
+      for (const b of buttons) {
+        // 往上找到只包含这一个 "Solve It!" 按钮的最大容器，就是这道题的卡片
+        let card = b;
+        while (card.parentElement && card.parentElement !== document.body) {
+          const n = [...card.parentElement.querySelectorAll('button, a, [role="button"], input[type="button"]')].filter((x) =>
+            /^solve it!?$/i.test(HW.text(x) || x.value || '')
+          ).length;
+          if (n > 1) break;
+          card = card.parentElement;
+        }
+        if (/\bsolved!/i.test(HW.text(card))) solved++;
+      }
+      return { solved, total: buttons.length };
+    }
     const body = HW.text(document.body);
     const m = body.match(/(\d+)\s*(?:of|\/)\s*(\d+)\s*(?:exercises?|problems?)?\s*(?:solved|completed)/i);
     if (m) return { solved: +m[1], total: +m[2] };
@@ -97,6 +120,7 @@
     btn.click();
     await HW.waitFor(() => location.href !== before, 10000);
     await HW.waitFor(() => {
+      if (solveItButtons().length) return true;
       const leaves = leafTexts();
       return leaves.some((t) => SOLVED.test(t) || UNSOLVED.test(t) || EXERCISE.test(t)) ||
         /\d+\s*(of|\/)\s*\d+\s*(exercises?|problems?)?\s*(solved|completed)/i.test(HW.text(document.body));

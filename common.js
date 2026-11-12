@@ -16,8 +16,8 @@
       // 跳过规则：platform / course 精确匹配（不写就是不限），title 是正则（忽略大小写）
       // 例：{ platform: 'Gradescope', course: 'CS101', title: 'homework|(^|[^a-z])hw\\s*\\d' }
       ignore: [],
-      // Rephactor：Dashboard 的 Pending 列表就是没做的作业，不用再逐个打开检查
-      rephactorAutoCheck: false,
+      // Rephactor：Pending 里带 "Solve Them Now" 的作业，在后台标签页打开数 Solved!，全部 Solved 就算完成
+      rephactorAutoCheck: true,
       rephactorDefaultCourse: 'Rephactor'
     },
     root.HW_LOCAL_SETTINGS || {}
@@ -207,8 +207,8 @@
 
   // Rephactor：后台数过题目，全部 Solved 就算完成
   HW.isDone = function (item, progress) {
-    if (!item.rpId || !progress) return false;
-    const p = progress[item.rpId];
+    if (!item.rpCheck || !progress) return false;
+    const p = progress[item.id];
     return !!(p && p.total > 0 && p.solved >= p.total);
   };
 

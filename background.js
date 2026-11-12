@@ -14,6 +14,10 @@ function scheduleSync() {
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.type === 'rpWhoAmI') {
+    sendResponse(onRpWhoAmI(sender));
+    return;
+  }
   if (msg.type === 'driveConnect' || msg.type === 'driveSync') {
     runSync({ interactive: msg.type === 'driveConnect', force: true }).then(() => sendResponse({ ok: true }));
     return true;
@@ -63,31 +67,38 @@ async function updateBadge() {
 }
 
 // ---------- Rephactor 进度检查 ----------
-const rpWaiters = new Map(); // tabId -> resolve
+// Pending 里带 "Solve Them Now" 的作业，可能其实已经全部 Solved。
+// 做法：在后台标签页打开 Dashboard，那个标签页里的 content script 问 "我要查哪个作业"（rpWhoAmI），
+// 点那个作业的 Solve Them Now，数 Solved!，报回进度（rpProgress），然后关掉标签页。
+const rpChecks = new Map(); // tabId -> { item, resolve }
 let rpChain = Promise.resolve();
 
 async function scheduleRephactorChecks(items) {
   const { rpProgress = {} } = await chrome.storage.local.get('rpProgress');
   const stale = items.filter((it) => {
-    if (!it.rpId || !it.link) return false;
-    const p = rpProgress[it.rpId];
+    if (!it.rpCheck) return false;
+    const p = rpProgress[it.id];
     return !p || Date.now() - p.at > 30 * 60000;
   });
   if (!stale.length) return;
+  // 先记下尝试时间，查失败也不会每次扫描都重开标签页
+  for (const it of stale) rpProgress[it.id] = Object.assign({}, rpProgress[it.id], { at: Date.now() });
+  await chrome.storage.local.set({ rpProgress });
+
   rpChain = rpChain.then(async () => {
     for (const it of stale.slice(0, 10)) {
       let tab;
       try {
-        tab = await chrome.tabs.create({ url: it.link, active: false });
-        await new Promise((res) => {
-          rpWaiters.set(tab.id, res);
-          setTimeout(res, 30000);
+        tab = await chrome.tabs.create({ url: new URL('/#!/dashboard', it.link).href, active: false });
+        await new Promise((resolve) => {
+          rpChecks.set(tab.id, { item: it, resolve });
+          setTimeout(resolve, 40000);
         });
       } catch (e) {
         /* 忽略单个失败 */
       } finally {
         if (tab) {
-          rpWaiters.delete(tab.id);
+          rpChecks.delete(tab.id);
           chrome.tabs.remove(tab.id).catch(() => {});
         }
       }
@@ -95,13 +106,18 @@ async function scheduleRephactorChecks(items) {
   });
 }
 
-async function onRpProgress({ rpId, solved, total }, sender) {
+function onRpWhoAmI(sender) {
+  const c = rpChecks.get(sender.tab && sender.tab.id);
+  return c ? { check: { id: c.item.id, title: c.item.title } } : {};
+}
+
+async function onRpProgress({ id, solved, total }, sender) {
   const { rpProgress = {} } = await chrome.storage.local.get('rpProgress');
-  rpProgress[rpId] = { solved, total, at: Date.now() };
+  rpProgress[id] = { solved, total, at: Date.now() };
   await chrome.storage.local.set({ rpProgress });
   await updateBadge();
-  const tabId = sender.tab && sender.tab.id;
-  if (rpWaiters.has(tabId)) rpWaiters.get(tabId)();
+  const c = rpChecks.get(sender.tab && sender.tab.id);
+  if (c) c.resolve();
 }
 
 // 每小时同步一次：就算没有新扫描，过了截止时间的作业也会从 Drive 文件里去掉

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "作业收集器 Homework Collector",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "登录 Gradescope、WebAssign、Rephactor、ALEKS、Brightspace 时自动收集未完成作业，导出 assignments.json 给作业看板。",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0bzXSjU6gykTUYP/pBaDFfQ4760Ky77PNBObTexy2sf37l9Ea3YvzMxPo91oEjZFJFZ+ylBNU0pmKde3v2AxtQ0p2ZE3ehizS4GklSJujG3o/iisQ99s19sF5Hzz8s9o7834j8swjN+G2m7BvLvt2V0dDzg1O3wpqsjz4nVb3ASFshDTWSbFZDbc5MI+m5uXZQ9Nn1t7MFjIhb/INDb13NJhdp534OBLwMxaOmFfm8omc8mkieyaCRSkZrvWvQ7FRz7cgbeofz3uV/6raN/hrVqcc4HpGwZZK7GDWHvAaun4yIgJxfLTT7FjFbyJauEl7xcgLWzMWdG4gA/hvwOBlQIDAQAB",
   "permissions": [

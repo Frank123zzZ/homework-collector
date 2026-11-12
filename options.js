@@ -5,7 +5,6 @@ async function load() {
   const s = await HW.getSettings();
   $('courses').value = JSON.stringify(s.courses, null, 2);
   $('ignore').value = JSON.stringify(s.ignore, null, 2);
-  $('rpAuto').checked = !!s.rephactorAutoCheck;
   $('rpCourse').value = s.rephactorDefaultCourse || '';
 }
 
@@ -20,7 +19,7 @@ $('save').onclick = async () => {
     return msg('格式有误，没有保存：' + e.message);
   }
   await chrome.storage.local.set({
-    settings: { courses, ignore, rephactorAutoCheck: $('rpAuto').checked, rephactorDefaultCourse: $('rpCourse').value.trim() }
+    settings: { courses, ignore, rephactorDefaultCourse: $('rpCourse').value.trim() }
   });
   chrome.runtime.sendMessage({ type: 'refreshBadge' });
   msg('已保存。课程映射在下次扫描时生效，跳过规则立即生效。');

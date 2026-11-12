@@ -16,8 +16,8 @@
       // 跳过规则：platform / course 精确匹配（不写就是不限），title 是正则（忽略大小写）
       // 例：{ platform: 'Gradescope', course: 'CS101', title: 'homework|(^|[^a-z])hw\\s*\\d' }
       ignore: [],
-      // Rephactor 的 Pending 列表不代表没做完，开启后会在后台标签页里逐个打开作业数 Solved!
-      rephactorAutoCheck: true,
+      // Rephactor：Dashboard 的 Pending 列表就是没做的作业，不用再逐个打开检查
+      rephactorAutoCheck: false,
       rephactorDefaultCourse: 'Rephactor'
     },
     root.HW_LOCAL_SETTINGS || {}

@@ -1,5 +1,6 @@
 // ALEKS：页面是单页应用，进入某门课的 Assignments 表后，读表格里带 "Due" 列的行。
-// 标注 ungraded 的、已完成的跳过。
+// 表头：Name | Status | Type | Start | Due | Progress | Details。
+// Progress 是 0%（或 "-"）就是没做；标注 ungraded 的跳过。
 (() => {
   const P = 'ALEKS';
   let last = '';
@@ -26,16 +27,23 @@
       foundTable = true;
       let nameIdx = heads.findIndex((h) => /name|assignment|title/i.test(h));
       if (nameIdx < 0) nameIdx = 0;
-      const statusIdx = heads.findIndex((h) => /status|score|progress|grade|complet/i.test(h));
+      const progIdx = heads.findIndex((h) => /progress|score|grade/i.test(h));
+      const statusIdx = heads.findIndex((h) => /status|complet/i.test(h));
 
       for (const row of rows.slice(headIdx + 1)) {
         const cells = cellsOf(row);
         if (cells.length <= dueIdx) continue;
         const rowText = HW.text(row);
         if (/ungraded/i.test(rowText)) continue;
-        const status = statusIdx >= 0 && cells[statusIdx] ? HW.text(cells[statusIdx]) : '';
-        const pending = /not (started|submitted|complete)|incomplete|in progress/i.test(status);
-        if (!pending && /\b(completed?|submitted|done)\b|100\s*%/i.test(status)) continue;
+        // Progress 列：0% 或 "-" 表示还没做；大于 0% 表示做过了
+        if (progIdx >= 0 && cells[progIdx]) {
+          const m = HW.text(cells[progIdx]).match(/(\d+(?:\.\d+)?)\s*%/);
+          if (m && parseFloat(m[1]) > 0) continue;
+        } else {
+          const status = statusIdx >= 0 && cells[statusIdx] ? HW.text(cells[statusIdx]) : '';
+          const pending = /not (started|submitted|complete)|incomplete|in progress/i.test(status);
+          if (!pending && /\b(completed?|submitted|done)\b|100\s*%/i.test(status)) continue;
+        }
 
         const title = HW.text(cells[nameIdx]);
         if (!title) continue;

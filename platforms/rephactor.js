@@ -1,83 +1,75 @@
-// Rephactor：
-//  - Dashboard（#!/dashboard）：读 Pending Assignments 列表
-//  - 作业页（#!/exerciseAssignment/<id>）：数 "Solved!"，把进度报给后台；全部 Solved 的作业不会导出
+// Rephactor：Dashboard 上 "Your Pending Assignments in <课程>" 下面列的就是还没做的作业。
+// 每条的结构是：
+//   QC-Day-19                       ← 标题（ES 作业旁边还有 "Solve Them Now" 按钮）
+//   Quick checks of the Day 19 content
+//   Due: Nov 16, 2026 8:00 am EST
+// 列表以 "Show Past Assignments" 按钮结束。
 (() => {
   const P = 'Rephactor';
-  const SOLVED = /^solved!?$/i;
-  const STATUS = /^(solved!?|unsolved|not (yet )?solved|attempted|not attempted|incomplete|in progress)$/i;
+  const HEADING = /^your pending assignments\b/i;
 
-  function leafTexts() {
+  function findHeadings() {
+    return [...document.querySelectorAll('body *')].filter((e) => {
+      const t = HW.text(e);
+      return t.length < 120 && HEADING.test(t) && ![...e.children].some((c) => HEADING.test(HW.text(c)));
+    });
+  }
+
+  // 把一个 Pending 区块的文字按行切开，遇到 "Due:" 行就结束一条作业
+  function parseBlock(heading) {
+    let box = heading.parentElement;
+    while (box && !/\bdue\s*:/i.test(box.innerText || '')) box = box.parentElement;
+    if (!box) return [];
+    const lines = (box.innerText || '').split('\n').map((l) => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const headText = HW.text(heading);
+    let i = lines.findIndex((l) => l === headText || HEADING.test(l));
     const out = [];
-    for (const el of document.querySelectorAll('body *')) {
-      if (el.children.length === 0) {
-        const t = HW.text(el);
-        if (t && t.length < 30) out.push(t);
+    let block = [];
+    for (i = i + 1; i < lines.length; i++) {
+      const l = lines[i];
+      if (/^show past assignments$|^your (grades|books|courses)\b|^your pending assignments\b/i.test(l)) break;
+      if (/^due\s*:/i.test(l)) {
+        const title = (block[0] || '').replace(/\s*solve them now\s*/i, '').trim();
+        if (title) out.push({ title, due: HW.parseDate(l.replace(/^due\s*:\s*/i, '')) });
+        block = [];
+      } else if (!/^solve them now$/i.test(l)) {
+        block.push(l);
       }
     }
     return out;
   }
 
-  async function checkAssignment(rpId) {
-    const ready = await HW.waitFor(() => leafTexts().some((t) => STATUS.test(t)) || /\d+\s*(of|\/)\s*\d+\s*(exercises?\s*)?(solved|completed)/i.test(HW.text(document.body)), 20000);
-    let solved = 0, total = 0;
-    const m = HW.text(document.body).match(/(\d+)\s*(?:of|\/)\s*(\d+)\s*(?:exercises?\s*)?(?:solved|completed)/i);
-    if (m) {
-      solved = +m[1];
-      total = +m[2];
-    } else if (ready) {
-      const leaves = leafTexts();
-      solved = leaves.filter((t) => SOLVED.test(t)).length;
-      total = leaves.filter((t) => STATUS.test(t)).length;
-    }
-    chrome.runtime.sendMessage({ type: 'rpProgress', rpId, solved, total });
-  }
-
-  async function scanDashboard(force) {
-    const heading = await HW.waitFor(() =>
-      [...document.querySelectorAll('h1,h2,h3,h4,h5,div,span')].find((e) => /^pending assignments$/i.test(HW.text(e)))
-    , 15000);
-    if (!heading) return;
-
-    // 找包住 Pending Assignments 标题和作业链接的最小容器
-    let box = heading.parentElement;
-    while (box && !box.querySelector('a[href*="exerciseAssignment/"]')) box = box.parentElement;
-    const links = [...(box || document).querySelectorAll('a[href*="exerciseAssignment/"]')];
+  async function scanDashboard() {
+    const headings = await HW.waitFor(() => {
+      const h = findHeadings();
+      return h.length ? h : null;
+    }, 15000);
+    if (!headings) return;
 
     const settings = await HW.getSettings();
     const items = [];
-    const seen = new Set();
-    for (const a of links) {
-      const rpId = (a.getAttribute('href').match(/exerciseAssignment\/([^/?#]+)/) || [])[1];
-      if (!rpId || seen.has(rpId)) continue;
-      seen.add(rpId);
-      const row = HW.rowOf(a, 400);
-      const rowText = HW.text(row);
-      const titleEl = [...row.querySelectorAll('h1,h2,h3,h4,h5,h6,strong,b,[class*="title" i],[class*="name" i]')].find(
-        (e) => HW.text(e) && !/solve them now/i.test(HW.text(e))
-      );
-      const title = titleEl
-        ? HW.text(titleEl)
-        : rowText.replace(/solve them now/gi, '').replace(/\bdue\b.*$/i, '').trim().slice(0, 80) || `Assignment ${rpId}`;
-      const course = HW.findCourse(rowText, settings) || HW.mapCourse(settings.rephactorDefaultCourse, settings);
-      items.push(
-        HW.makeItem({ platform: P, prefix: 'rp', course, title, due: HW.dueFromText(rowText), link: a.href, extra: { rpId } })
-      );
+    for (const h of headings) {
+      // "Your Pending Assignments in CSUY 1114" → 课程 CSUY 1114
+      const courseRaw = HW.text(h).replace(HEADING, '').replace(/^\s*in\s*/i, '').trim();
+      const course = HW.findCourse(courseRaw, settings) || HW.mapCourse(courseRaw || settings.rephactorDefaultCourse, settings);
+      for (const it of parseBlock(h)) {
+        items.push(HW.makeItem({ platform: P, prefix: 'rp', course, title: it.title, due: it.due, link: location.origin + '/#!/dashboard' }));
+      }
     }
-    await HW.report({ platform: P, scope: 'rephactor', items, message: `Pending 里 ${items.length} 条（会自动检查是否全部 Solved）` });
+    await HW.report({ platform: P, scope: 'rephactor', items, message: `Pending 里 ${items.length} 条` });
   }
 
-  async function route(force) {
+  async function route() {
     const h = location.hash;
-    const m = h.match(/exerciseAssignment\/([^/?#]+)/);
+    if (!(/dashboard/i.test(h) || h === '' || h === '#!/' || h === '#!')) return;
     try {
-      if (m) await checkAssignment(m[1]);
-      else if (/dashboard/i.test(h) || h === '' || h === '#!/') await scanDashboard(force);
+      await scanDashboard();
     } catch (e) {
       HW.setStatus(P, '出错：' + e.message, false);
     }
   }
 
-  window.addEventListener('hashchange', () => route(false));
+  window.addEventListener('hashchange', route);
   HW.onRescan(route);
-  route(false);
+  route();
 })();

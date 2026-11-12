@@ -12,11 +12,23 @@
     if (!links) return; // 不是课程首页
 
     const settings = await HW.getSettings();
-    const header = [document.title, ...[...document.querySelectorAll('h1, h2, h3, [class*="course" i]')].slice(0, 40).map(HW.text)].join(' | ');
+    // 首页顶部的 SELECT COURSE 下拉框里包含所有课程，所以只看当前选中的那一项；
+    // 其他地方的文字要先去掉下拉选项，免得认成别的课
+    const selected = [...document.querySelectorAll('select')]
+      .map((s) => s.selectedOptions && s.selectedOptions[0])
+      .filter(Boolean)
+      .map(HW.text);
+    let bodyText = HW.text(document.body);
+    for (const o of document.querySelectorAll('option')) {
+      const t = HW.text(o);
+      if (t) bodyText = bodyText.split(t).join(' ');
+    }
+    const header = [document.title, ...[...document.querySelectorAll('h1, h2, h3')].slice(0, 40).map(HW.text)].join(' | ');
     const course =
+      selected.map((t) => HW.findCourse(t, settings)).find(Boolean) ||
       HW.findCourse(header, settings) ||
-      HW.findCourse(HW.text(document.body).slice(0, 5000), settings) ||
-      HW.mapCourse(HW.text(document.querySelector('h1')) || document.title, settings);
+      HW.findCourse(bodyText.slice(0, 5000), settings) ||
+      HW.mapCourse(selected[0] || HW.text(document.querySelector('h1')) || document.title, settings);
 
     if (!force && !(await HW.throttle('webassign:' + course.name, 10))) return;
 

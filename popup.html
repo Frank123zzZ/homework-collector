@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --bg:#fff; --fg:#1c1917; --muted:#78716c; --line:#e7e5e4; --accent:#c2410c; --ok:#15803d; --bad:#b91c1c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1c1917; --fg:#f5f5f4; --muted:#a8a29e; --line:#44403c; --accent:#fb923c; --ok:#4ade80; --bad:#f87171; } }
+  body { margin:0; width:380px; font:13px/1.45 system-ui, "Microsoft YaHei", sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:12px 14px 8px; display:flex; align-items:baseline; justify-content:space-between; }
+  h1 { font-size:15px; margin:0; }
+  .muted { color:var(--muted); font-size:12px; }
+  section { padding:0 14px 10px; }
+  h2 { font-size:12px; color:var(--muted); font-weight:600; margin:8px 0 4px; text-transform:uppercase; letter-spacing:.04em; }
+  .plat { display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-bottom:1px solid var(--line); }
+  .plat b { font-weight:600; min-width:84px; }
+  .plat span { text-align:right; color:var(--muted); font-size:12px; }
+  .plat .ok { color:var(--ok); } .plat .bad { color:var(--bad); }
+  ul { list-style:none; margin:0; padding:0; max-height:260px; overflow:auto; }
+  li { padding:6px 0; border-bottom:1px solid var(--line); }
+  li .t { font-weight:600; }
+  li a { color:inherit; text-decoration:none; } li a:hover { text-decoration:underline; }
+  li .m { color:var(--muted); font-size:12px; display:flex; justify-content:space-between; }
+  .soon { color:var(--accent); font-weight:600; }
+  .actions { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:10px 14px 14px; border-top:1px solid var(--line); }
+  button { font:inherit; padding:7px 8px; border-radius:6px; border:1px solid var(--line); background:transparent; color:var(--fg); cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .drive { font-size:12px; padding:2px 0 6px; }
+  .drive .ok { color:var(--ok); } .drive .bad { color:var(--bad); }
+  .drivebtns { display:flex; gap:6px; }
+  .drivebtns button { flex:1; padding:5px 8px; font-size:12px; }
+  #msg { padding:0 14px 10px; font-size:12px; color:var(--muted); min-height:1em; }
+</style>
+</head>
+<body>
+  <header><h1>作业收集器</h1><span class="muted" id="count"></span></header>
+  <section>
+    <h2>Google Drive 同步</h2>
+    <div class="drive"><span id="driveStatus" class="muted">读取中…</span></div>
+    <div class="drivebtns">
+      <button id="driveConnect">连接 Google Drive</button>
+      <button id="driveSync">立即同步</button>
+    </div>
+  </section>
+  <section><h2>平台状态</h2><div id="plats"></div></section>
+  <section><h2>未完成作业（将导出）</h2><ul id="list"></ul></section>
+  <div class="actions">
+    <button class="primary" id="download">下载 assignments.json</button>
+    <button id="copy">复制 JSON</button>
+    <button id="rescan">重新扫描当前页</button>
+    <button id="options">设置</button>
+  </div>
+  <div id="msg"></div>
+  <script src="local-settings.js"></script>
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

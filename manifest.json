@@ -1,0 +1,102 @@
+{
+  "manifest_version": 3,
+  "name": "作业收集器 Homework Collector",
+  "version": "0.2.0",
+  "description": "登录 Gradescope、WebAssign、Rephactor、ALEKS、Brightspace 时自动收集未完成作业，导出 assignments.json 给作业看板。",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0bzXSjU6gykTUYP/pBaDFfQ4760Ky77PNBObTexy2sf37l9Ea3YvzMxPo91oEjZFJFZ+ylBNU0pmKde3v2AxtQ0p2ZE3ehizS4GklSJujG3o/iisQ99s19sF5Hzz8s9o7834j8swjN+G2m7BvLvt2V0dDzg1O3wpqsjz4nVb3ASFshDTWSbFZDbc5MI+m5uXZQ9Nn1t7MFjIhb/INDb13NJhdp534OBLwMxaOmFfm8omc8mkieyaCRSkZrvWvQ7FRz7cgbeofz3uV/6raN/hrVqcc4HpGwZZK7GDWHvAaun4yIgJxfLTT7FjFbyJauEl7xcgLWzMWdG4gA/hvwOBlQIDAQAB",
+  "permissions": [
+    "storage",
+    "identity",
+    "identity.email",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://www.googleapis.com/*"
+  ],
+  "oauth2": {
+    "client_id": "PASTE_YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "作业收集器",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.gradescope.com/*",
+        "https://gradescope.com/*"
+      ],
+      "js": [
+        "local-settings.js",
+        "common.js",
+        "platforms/gradescope.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.webassign.net/web/*",
+        "https://*.webassign.net/web/*"
+      ],
+      "js": [
+        "local-settings.js",
+        "common.js",
+        "platforms/webassign.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://rephactor.com/*",
+        "https://*.rephactor.com/*"
+      ],
+      "js": [
+        "local-settings.js",
+        "common.js",
+        "platforms/rephactor.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.aleks.com/*"
+      ],
+      "js": [
+        "local-settings.js",
+        "common.js",
+        "platforms/aleks.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*/d2l/*"
+      ],
+      "js": [
+        "local-settings.js",
+        "common.js",
+        "platforms/brightspace.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

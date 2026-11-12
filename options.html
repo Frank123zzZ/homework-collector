@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>作业收集器 设置</title>
+<style>
+  :root { --bg:#fafaf9; --fg:#1c1917; --muted:#78716c; --line:#d6d3d1; --accent:#c2410c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1c1917; --fg:#f5f5f4; --muted:#a8a29e; --line:#44403c; --accent:#fb923c; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui, "Microsoft YaHei", sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:20px; } h2 { font-size:15px; margin-top:28px; }
+  p { color:var(--muted); margin:4px 0 8px; }
+  textarea { width:100%; box-sizing:border-box; min-height:180px; font:12.5px/1.45 ui-monospace, Consolas, monospace; padding:10px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; }
+  input[type=text] { padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; }
+  .row { display:flex; gap:8px; margin-top:20px; flex-wrap:wrap; }
+  button { font:inherit; padding:8px 14px; border-radius:6px; border:1px solid var(--line); background:transparent; color:inherit; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  #msg { margin-top:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>作业收集器 · 设置</h1>
+
+  <h2>课程映射</h2>
+  <p><code>match</code> 里任一项出现在平台上的课程名里（忽略大小写和符号），就显示成 <code>name</code>；<code>abbr</code> 用来生成 id，比如 <code>gs-dm-hw11</code>。</p>
+  <textarea id="courses"></textarea>
+
+  <h2>跳过规则</h2>
+  <p>满足一条规则的作业不导出。<code>platform</code>、<code>course</code> 精确匹配（可省略），<code>title</code> 是正则（忽略大小写）。</p>
+  <textarea id="ignore"></textarea>
+
+  <h2>Rephactor</h2>
+  <label><input type="checkbox" id="rpAuto"> 自动在后台标签页里打开每个 Pending 作业，数 "Solved!" 判断是否做完（每个作业 30 分钟最多查一次）</label>
+  <p>Rephactor 作业默认归到课程：<input type="text" id="rpCourse"></p>
+
+  <div class="row">
+    <button class="primary" id="save">保存</button>
+    <button id="reset">恢复默认设置</button>
+    <button id="clear">清空已收集的作业</button>
+  </div>
+  <div id="msg"></div>
+</main>
+<script src="local-settings.js"></script>
+<script src="common.js"></script>
+<script src="options.js"></script>
+</body>
+</html>
